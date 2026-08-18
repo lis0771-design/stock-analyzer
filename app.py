@@ -1263,11 +1263,21 @@ if saved_tickers:
         on_change=apply_saved_ticker_selection,
         help="이전에 조회한 종목입니다. 클릭하면 입력란에 채워지고, 고른 뒤 삭제도 할 수 있습니다.",
     )
-    delete_col, clear_col, _ = st.columns([1, 1, 4])
+    delete_col, clear_col = st.columns(2, gap="small")
     with delete_col:
-        st.button("삭제", key="delete_saved_selected", on_click=delete_selected_saved_tickers)
+        st.button(
+            "삭제",
+            key="delete_saved_selected",
+            on_click=delete_selected_saved_tickers,
+            use_container_width=True,
+        )
     with clear_col:
-        st.button("전체 삭제", key="delete_saved_all", on_click=delete_all_saved_tickers)
+        st.button(
+            "전체 삭제",
+            key="delete_saved_all",
+            on_click=delete_all_saved_tickers,
+            use_container_width=True,
+        )
     if st.session_state.pop("delete_saved_warning", False):
         st.warning("삭제할 종목을 먼저 선택해 주세요.")
 
