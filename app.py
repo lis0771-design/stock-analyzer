@@ -572,7 +572,7 @@ def render_watchlist_tab(quotes: list[dict] | None) -> None:
                 "종목": item["company_name"],
                 "전일종가": previous_close,
                 "현재가": current_price,
-                "전일 대비": change,
+                "전일대비": change,
                 "삭제": False,
             }
         )
@@ -601,12 +601,12 @@ def render_watchlist_tab(quotes: list[dict] | None) -> None:
         hide_index=True,
         use_container_width=True,
         key="watchlist_editor",
-        disabled=["종목", "전일종가", "현재가", "전일 대비"],
+        disabled=["종목", "전일종가", "현재가", "전일대비"],
         column_config={
             "종목": st.column_config.TextColumn(width="small"),
             "전일종가": st.column_config.TextColumn(width="small"),
             "현재가": st.column_config.TextColumn(width="small"),
-            "전일 대비": st.column_config.TextColumn(width="small"),
+            "전일대비": st.column_config.TextColumn(width="small"),
             "삭제": st.column_config.CheckboxColumn(width="small"),
         },
     )
@@ -1311,6 +1311,10 @@ style_block = (
         div[data-testid="stAppViewContainer"] span,
         div[data-testid="stAppViewContainer"] li {
             font-size: __MOBILE_SCALE_REM__ !important;
+        }
+        div[data-testid="stAppViewContainer"] table th,
+        div[data-testid="stAppViewContainer"] table td {
+            white-space: nowrap !important;
         }
         div[data-testid="stHorizontalBlock"] {
             flex-wrap: nowrap !important;
