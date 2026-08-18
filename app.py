@@ -1,3 +1,4 @@
+import html
 import json
 import re
 import time
@@ -511,6 +512,41 @@ def format_watchlist_price(price: float, currency: str) -> str:
     return format_price(price, currency)
 
 
+def render_watchlist_mobile_table(rows: list[dict]) -> None:
+    body_rows = []
+    for row in rows:
+        body_rows.append(
+            "<tr>"
+            f"<td>{html.escape(str(row['종목']))}</td>"
+            f"<td>{html.escape(str(row['전일종가']))}</td>"
+            f"<td class='watchlist-current-price'>{html.escape(str(row['현재가']))}</td>"
+            f"<td>{html.escape(str(row['전일대비']))}</td>"
+            "</tr>"
+        )
+    st.markdown(
+        """
+        <div class="watchlist-mobile-table-wrap">
+          <table class="watchlist-mobile-table">
+            <thead>
+              <tr>
+                <th>종목</th>
+                <th>전일종가</th>
+                <th class="watchlist-current-price">현재가</th>
+                <th>전일대비</th>
+              </tr>
+            </thead>
+            <tbody>
+        """
+        + "".join(body_rows)
+        + """
+            </tbody>
+          </table>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def refresh_watchlist_quotes(session, fetched_items: list[dict], fetch_errors: list[str]) -> None:
     extra = {item["ticker"]: item for item in fetched_items}
     quotes = []
@@ -578,7 +614,7 @@ def render_watchlist_tab(quotes: list[dict] | None) -> None:
         )
     if mobile_scale > 1.0:
         mobile_rows = [{k: v for k, v in row.items() if k != "삭제"} for row in table_rows]
-        st.table(pd.DataFrame(mobile_rows).style.hide(axis="index"))
+        render_watchlist_mobile_table(mobile_rows)
         name_by_ticker = {item["ticker"]: item["company_name"] for item in items}
         delete_targets = st.multiselect(
             "삭제할 관심 종목",
@@ -1280,6 +1316,26 @@ style_block = (
         background-color: #1864ab !important;
         color: #ffffff !important;
         border-color: #1864ab !important;
+    }
+    .watchlist-mobile-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 0.75rem;
+    }
+    .watchlist-mobile-table {
+        border-collapse: collapse;
+        width: max-content;
+        min-width: 100%;
+    }
+    .watchlist-mobile-table th,
+    .watchlist-mobile-table td {
+        border-bottom: 1px solid rgba(49, 51, 63, 0.15);
+        padding: 0.45rem 0.65rem;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .watchlist-current-price {
+        font-weight: 700 !important;
     }
     section[data-testid="stSidebar"] div[data-testid="stTextInput"]:has(input:disabled) label p {
         font-weight: 700 !important;
