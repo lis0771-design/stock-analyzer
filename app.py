@@ -1272,6 +1272,29 @@ components.html(
     """
     <script>
     const doc = window.parent.document;
+    const fitMobileTitle = () => {
+      if (!doc.body) return;
+      const title = doc.querySelector("h1");
+      if (!title) return;
+      const mobileWidth = window.parent.innerWidth || doc.documentElement.clientWidth || 0;
+      if (mobileWidth > 640) {
+        title.style.removeProperty("font-size");
+        title.style.removeProperty("letter-spacing");
+        return;
+      }
+      const container = title.parentElement;
+      if (!container) return;
+      title.style.whiteSpace = "nowrap";
+      title.style.lineHeight = "1.15";
+      title.style.letterSpacing = "-0.05em";
+      let size = Math.min(96, Math.max(52, mobileWidth * 0.22));
+      title.style.fontSize = `${size}px`;
+      const maxWidth = Math.max(container.clientWidth - 4, 0);
+      while (title.scrollWidth > maxWidth && size > 32) {
+        size -= 1;
+        title.style.fontSize = `${size}px`;
+      }
+    };
     doc.documentElement.setAttribute("lang", "ko");
     doc.documentElement.setAttribute("translate", "no");
     doc.documentElement.classList.add("notranslate");
@@ -1279,6 +1302,14 @@ components.html(
       doc.body.setAttribute("translate", "no");
       doc.body.classList.add("notranslate");
     }
+    fitMobileTitle();
+    new MutationObserver(() => fitMobileTitle()).observe(doc.body || doc.documentElement, {
+      childList: true,
+      subtree: true,
+    });
+    window.parent.addEventListener("resize", fitMobileTitle);
+    setTimeout(fitMobileTitle, 150);
+    setTimeout(fitMobileTitle, 600);
     </script>
     """,
     height=0,
