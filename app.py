@@ -1226,10 +1226,10 @@ mobile_scale_map = {
     "125%": 1.25,
 }
 mobile_scale = mobile_scale_map.get(st.session_state.get("mobile_scale", "기본"), 1.0)
-mobile_title_size = 2.45 * mobile_scale
-st.title("주식 데이터 분석기")
-st.markdown(
-    f"""
+mobile_title_rem = f"{2.45 * mobile_scale:.2f}rem"
+mobile_scale_rem = f"{mobile_scale:.2f}rem"
+style_block = (
+    """
     <style>
     div[data-testid="stFormSubmitButton"] button,
     .stFormSubmitButton button {
@@ -1259,7 +1259,7 @@ st.markdown(
     }
     @media (max-width: 640px) {
         h1 {
-            font-size: {mobile_title_size:.2f}rem !important;
+            font-size: __MOBILE_TITLE_REM__ !important;
             line-height: 1.15 !important;
             white-space: nowrap !important;
         }
@@ -1267,12 +1267,12 @@ st.markdown(
         div[data-testid="stAppViewContainer"] input,
         div[data-testid="stAppViewContainer"] label,
         div[data-testid="stAppViewContainer"] textarea,
-        div[data-testid="stAppViewContainer"] [data-baseweb="select"] * ,
+        div[data-testid="stAppViewContainer"] [data-baseweb="select"] *,
         div[data-testid="stAppViewContainer"] table,
         div[data-testid="stAppViewContainer"] p,
         div[data-testid="stAppViewContainer"] span,
         div[data-testid="stAppViewContainer"] li {
-            font-size: {mobile_scale:.2f}rem !important;
+            font-size: __MOBILE_SCALE_REM__ !important;
         }
         div[data-testid="stHorizontalBlock"] {
             flex-wrap: nowrap !important;
@@ -1284,9 +1284,12 @@ st.markdown(
         }
     }
     </style>
-    """,
-    unsafe_allow_html=True,
+    """
+    .replace("__MOBILE_TITLE_REM__", mobile_title_rem)
+    .replace("__MOBILE_SCALE_REM__", mobile_scale_rem)
 )
+st.title("주식 데이터 분석기")
+st.markdown(style_block, unsafe_allow_html=True)
 
 st.markdown(
     '<p class="notranslate" translate="no" lang="ko" '
