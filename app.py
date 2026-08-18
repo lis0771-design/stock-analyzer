@@ -1353,9 +1353,10 @@ style_block = (
     }
     @media (max-width: 640px) {
         h1 {
-            font-size: __MOBILE_TITLE_REM__ !important;
+            font-size: clamp(2.1rem, 10.8vw, __MOBILE_TITLE_REM__) !important;
             line-height: 1.15 !important;
             white-space: nowrap !important;
+            letter-spacing: -0.05em !important;
         }
         div[data-testid="stAppViewContainer"] button,
         div[data-testid="stAppViewContainer"] input,
