@@ -1272,31 +1272,6 @@ components.html(
     """
     <script>
     const doc = window.parent.document;
-    const fitMobileTitle = () => {
-      if (!doc.body) return;
-      const title = doc.querySelector("h1");
-      if (!title) return;
-      const mobileWidth = window.parent.innerWidth || doc.documentElement.clientWidth || 0;
-      if (mobileWidth > 640) {
-        title.style.removeProperty("font-size");
-        title.style.removeProperty("letter-spacing");
-        title.style.removeProperty("line-height");
-        title.style.removeProperty("white-space");
-        return;
-      }
-      const container = title.parentElement;
-      if (!container) return;
-      title.style.setProperty("white-space", "nowrap", "important");
-      title.style.setProperty("line-height", "1.15", "important");
-      title.style.setProperty("letter-spacing", "-0.05em", "important");
-      let size = Math.min(96, Math.max(52, mobileWidth * 0.22));
-      title.style.setProperty("font-size", `${size}px`, "important");
-      const maxWidth = Math.max(container.clientWidth - 4, 0);
-      while (title.scrollWidth > maxWidth && size > 32) {
-        size -= 1;
-        title.style.setProperty("font-size", `${size}px`, "important");
-      }
-    };
     doc.documentElement.setAttribute("lang", "ko");
     doc.documentElement.setAttribute("translate", "no");
     doc.documentElement.classList.add("notranslate");
@@ -1304,14 +1279,6 @@ components.html(
       doc.body.setAttribute("translate", "no");
       doc.body.classList.add("notranslate");
     }
-    fitMobileTitle();
-    new MutationObserver(() => fitMobileTitle()).observe(doc.body || doc.documentElement, {
-      childList: true,
-      subtree: true,
-    });
-    window.parent.addEventListener("resize", fitMobileTitle);
-    setTimeout(fitMobileTitle, 150);
-    setTimeout(fitMobileTitle, 600);
     </script>
     """,
     height=0,
@@ -1370,6 +1337,13 @@ style_block = (
     .watchlist-current-price {
         font-weight: 700 !important;
     }
+    .app-title {
+        font-size: 3.6rem;
+        font-weight: 700;
+        line-height: 1.1;
+        margin: 0 0 0.75rem 0;
+        letter-spacing: -0.02em;
+    }
     section[data-testid="stSidebar"] div[data-testid="stTextInput"]:has(input:disabled) label p {
         font-weight: 700 !important;
         color: #111111 !important;
@@ -1385,11 +1359,12 @@ style_block = (
         border-color: #31333F !important;
     }
     @media (max-width: 640px) {
-        h1 {
-            font-size: clamp(2.1rem, 10.8vw, __MOBILE_TITLE_REM__) !important;
-            line-height: 1.15 !important;
+        .app-title {
+            font-size: 12vw !important;
+            line-height: 1.08 !important;
             white-space: nowrap !important;
-            letter-spacing: -0.05em !important;
+            letter-spacing: -0.06em !important;
+            overflow: hidden !important;
         }
         div[data-testid="stAppViewContainer"] button,
         div[data-testid="stAppViewContainer"] input,
@@ -1420,7 +1395,7 @@ style_block = (
     .replace("__MOBILE_TITLE_REM__", mobile_title_rem)
     .replace("__MOBILE_SCALE_REM__", mobile_scale_rem)
 )
-st.title("주식 데이터 분석기")
+st.markdown('<div class="app-title">주식 데이터 분석기</div>', unsafe_allow_html=True)
 st.markdown(style_block, unsafe_allow_html=True)
 
 st.markdown(
