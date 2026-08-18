@@ -570,6 +570,26 @@ def render_watchlist_tab(quotes: list[dict] | None) -> None:
                 "삭제": False,
             }
         )
+    if mobile_scale > 1.0:
+        mobile_rows = [{k: v for k, v in row.items() if k != "삭제"} for row in table_rows]
+        st.table(pd.DataFrame(mobile_rows).style.hide(axis="index"))
+        name_by_ticker = {item["ticker"]: item["company_name"] for item in items}
+        delete_targets = st.multiselect(
+            "삭제할 관심 종목",
+            options=[item["ticker"] for item in items],
+            format_func=lambda ticker: name_by_ticker.get(ticker, ticker),
+            key="watchlist_delete_pick",
+            help="삭제할 관심 종목을 골라 주세요.",
+        )
+        if delete_targets:
+            st.button(
+                "선택한 관심 종목 삭제",
+                key="delete_watchlist_selected_mobile",
+                on_click=delete_selected_watchlist_tickers,
+                args=(delete_targets,),
+                use_container_width=True,
+            )
+        return
     edited = st.data_editor(
         pd.DataFrame(table_rows),
         hide_index=True,
@@ -1386,7 +1406,11 @@ if result:
                 }
             )
         st.write("**비교 종목**")
-        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        rows_df = pd.DataFrame(rows)
+        if mobile_scale > 1.0:
+            st.table(rows_df.style.hide(axis="index"))
+        else:
+            st.dataframe(rows_df, hide_index=True, width="stretch")
     else:
         st.write(f"**회사명:** {result['company_name']}")
         st.write(f"**종목 코드:** {result['ticker']}")
@@ -1403,4 +1427,7 @@ if result:
     )
     st.subheader("이전 데이터")
     history_table = format_history_table(result["history"])
-    st.dataframe(history_table, width="stretch")
+    if mobile_scale > 1.0:
+        st.table(history_table.style.hide(axis="index"))
+    else:
+        st.dataframe(history_table, width="stretch")
