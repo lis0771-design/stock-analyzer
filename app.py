@@ -1181,7 +1181,10 @@ def render_price_chart(
 
 
 def format_history_table(history: pd.DataFrame) -> pd.DataFrame:
-    table = history.drop(columns=["MA20", "MA60"], errors="ignore").reset_index()
+    table = history.drop(
+        columns=["MA20", "MA60", "Dividends", "Stock Splits"],
+        errors="ignore",
+    ).reset_index()
     date_col = table.columns[0]
     if pd.api.types.is_datetime64_any_dtype(table[date_col]):
         table[date_col] = table[date_col].dt.strftime("%Y/%m/%d")
