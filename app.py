@@ -1,5 +1,6 @@
 import json
 import re
+import time
 from pathlib import Path
 
 import altair as alt
@@ -96,8 +97,27 @@ MAX_SAVED_TICKERS = 24
 WATCHLIST_LIMIT = 10
 
 
+RETRY_DELAYS = (3, 8, 15)
+
+
 def create_session():
     return requests.Session(impersonate="chrome", verify=False)
+
+
+def retry_on_rate_limit(func, *args, **kwargs):
+    last_exc = None
+    for attempt, delay in enumerate((0, *RETRY_DELAYS)):
+        if delay:
+            time.sleep(delay)
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            msg = str(exc).lower()
+            if "rate limit" in msg or "too many requests" in msg or "429" in msg:
+                last_exc = exc
+                continue
+            raise
+    raise last_exc
 
 
 def normalize_query(query: str) -> str:
@@ -415,6 +435,27 @@ def delete_watchlist_ticker(ticker: str) -> None:
         st.session_state.saved_ticker_pills = selected
     elif "saved_ticker_pills" in st.session_state:
         del st.session_state["saved_ticker_pills"]
+    if "watchlist_editor" in st.session_state:
+        del st.session_state["watchlist_editor"]
+
+
+def delete_selected_watchlist_tickers(tickers: list[str]) -> None:
+    remove = {str(ticker).strip() for ticker in tickers if ticker}
+    if not remove:
+        return
+    remove_saved_tickers(list(remove))
+    st.session_state.watchlist_quotes = [
+        item
+        for item in (st.session_state.get("watchlist_quotes") or [])
+        if item.get("ticker") not in remove
+    ]
+    selected = [item for item in (st.session_state.get("saved_ticker_pills") or []) if item not in remove]
+    if selected:
+        st.session_state.saved_ticker_pills = selected
+    elif "saved_ticker_pills" in st.session_state:
+        del st.session_state["saved_ticker_pills"]
+    if "watchlist_editor" in st.session_state:
+        del st.session_state["watchlist_editor"]
 
 
 def infer_currency(ticker: str) -> str:
@@ -423,14 +464,27 @@ def infer_currency(ticker: str) -> str:
     return "USD"
 
 
-def fetch_current_quote(ticker: str, name: str, session) -> dict:
-    resolved = ticker
+def _fetch_quote_history(resolved: str, session):
     stock = yf.Ticker(resolved, session=session)
     history = stock.history(period="5d")
+    return history
+
+
+def derive_previous_close(current_price: float | None, change_pct: float | None) -> float | None:
+    if current_price is None or change_pct is None:
+        return None
+    ratio = 1 + (change_pct / 100)
+    if ratio <= 0:
+        return None
+    return current_price / ratio
+
+
+def fetch_current_quote(ticker: str, name: str, session) -> dict:
+    resolved = ticker
+    history = retry_on_rate_limit(_fetch_quote_history, resolved, session)
     if history.empty and re.fullmatch(r"\d{6}\.KS", resolved):
         resolved = resolved[:-3] + ".KQ"
-        stock = yf.Ticker(resolved, session=session)
-        history = stock.history(period="5d")
+        history = retry_on_rate_limit(_fetch_quote_history, resolved, session)
     if history.empty:
         raise ValueError("현재가를 찾을 수 없습니다.")
     close = history["Close"]
@@ -444,6 +498,7 @@ def fetch_current_quote(ticker: str, name: str, session) -> dict:
     return {
         "ticker": resolved,
         "company_name": preferred_name(resolved, name),
+        "previous_close": previous_close,
         "current_price": current_price,
         "change_pct": change_pct,
         "currency": infer_currency(resolved),
@@ -461,6 +516,8 @@ def refresh_watchlist_quotes(session, fetched_items: list[dict], fetch_errors: l
                 {
                     "ticker": ticker,
                     "company_name": src["company_name"],
+                    "previous_close": src.get("previous_close")
+                    or derive_previous_close(src.get("current_price"), src.get("change_pct")),
                     "current_price": src["current_price"],
                     "change_pct": src["change_pct"],
                     "currency": src["currency"],
@@ -475,6 +532,7 @@ def refresh_watchlist_quotes(session, fetched_items: list[dict], fetch_errors: l
                 {
                     "ticker": ticker,
                     "company_name": item.get("name") or ticker,
+                    "previous_close": None,
                     "current_price": None,
                     "change_pct": None,
                     "currency": infer_currency(ticker),
@@ -490,29 +548,50 @@ def render_watchlist_tab(quotes: list[dict] | None) -> None:
         return
     st.write("**관심 종목 현재가**")
     st.caption("코드 또는 종목으로 조회한 종목을 최대 10개까지 보여 줍니다. 삭제하면 관심 종목에서 제외됩니다.")
-    header = st.columns([2.2, 1.4, 1.5, 1.2, 0.8])
-    header[0].markdown("**종목**")
-    header[1].markdown("**코드**")
-    header[2].markdown("**현재가**")
-    header[3].markdown("**전일 대비**")
-    header[4].markdown("**삭제**")
+    table_rows = []
     for item in items:
-        price = (
+        previous_close = (
+            format_price(item["previous_close"], item["currency"])
+            if item.get("previous_close") is not None
+            else "-"
+        )
+        current_price = (
             format_price(item["current_price"], item["currency"])
             if item.get("current_price") is not None
             else "-"
         )
         change = f"{item['change_pct']:+.2f}%" if item.get("change_pct") is not None else "-"
-        cols = st.columns([2.2, 1.4, 1.5, 1.2, 0.8])
-        cols[0].write(item["company_name"])
-        cols[1].write(item["ticker"])
-        cols[2].write(price)
-        cols[3].write(change)
-        cols[4].button(
-            "삭제",
-            key=f"watchlist_del_{item['ticker']}",
-            on_click=delete_watchlist_ticker,
-            args=(item["ticker"],),
+        table_rows.append(
+            {
+                "종목": item["company_name"],
+                "전일종가": previous_close,
+                "현재가": current_price,
+                "전일 대비": change,
+                "삭제": False,
+            }
+        )
+    edited = st.data_editor(
+        pd.DataFrame(table_rows),
+        hide_index=True,
+        use_container_width=True,
+        key="watchlist_editor",
+        disabled=["종목", "전일종가", "현재가", "전일 대비"],
+        column_config={
+            "종목": st.column_config.TextColumn(width="medium"),
+            "전일종가": st.column_config.TextColumn(width="small"),
+            "현재가": st.column_config.TextColumn(width="small"),
+            "전일 대비": st.column_config.TextColumn(width="small"),
+            "삭제": st.column_config.CheckboxColumn(width="small"),
+        },
+    )
+    delete_targets = [items[idx]["ticker"] for idx, row in edited.iterrows() if row["삭제"]]
+    if delete_targets:
+        st.button(
+            "선택한 관심 종목 삭제",
+            key="delete_watchlist_selected",
+            on_click=delete_selected_watchlist_tickers,
+            args=(delete_targets,),
+            use_container_width=True,
         )
 
 
@@ -656,17 +735,20 @@ def make_altair_comparison_chart(frame: pd.DataFrame):
     )
 
 
-def fetch_stock_data(ticker: str, period: str, session):
+def _fetch_ticker_data(ticker: str, fetch_period: str, session):
     stock = yf.Ticker(ticker, session=session)
     info = stock.info or {}
-    fetch_period = HISTORY_FETCH.get(period, period)
     history = stock.history(period=fetch_period)
+    return stock, info, history
+
+
+def fetch_stock_data(ticker: str, period: str, session):
+    fetch_period = HISTORY_FETCH.get(period, period)
+    _stock, info, history = retry_on_rate_limit(_fetch_ticker_data, ticker, fetch_period, session)
 
     if history.empty and re.fullmatch(r"\d{6}\.KS", ticker):
         ticker = ticker[:-3] + ".KQ"
-        stock = yf.Ticker(ticker, session=session)
-        info = stock.info or {}
-        history = stock.history(period=fetch_period)
+        _stock, info, history = retry_on_rate_limit(_fetch_ticker_data, ticker, fetch_period, session)
 
     company_name = info.get("longName") or info.get("shortName") or ticker
     current_price = info.get("currentPrice") or info.get("regularMarketPrice")
