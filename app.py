@@ -577,7 +577,7 @@ def render_watchlist_tab(quotes: list[dict] | None) -> None:
         key="watchlist_editor",
         disabled=["종목", "전일종가", "현재가", "전일 대비"],
         column_config={
-            "종목": st.column_config.TextColumn(width="medium"),
+            "종목": st.column_config.TextColumn(width="small"),
             "전일종가": st.column_config.TextColumn(width="small"),
             "현재가": st.column_config.TextColumn(width="small"),
             "전일 대비": st.column_config.TextColumn(width="small"),
