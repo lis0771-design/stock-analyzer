@@ -711,6 +711,7 @@ def make_altair_comparison_chart(frame: pd.DataFrame):
     long_df = long_df.rename(columns={date_col: "date"})
     long_df = long_df.melt(id_vars="date", var_name="name", value_name="ret")
     long_df["date"] = pd.to_datetime(long_df["date"])
+    chart_height = int(520 * mobile_chart_scale)
     return (
         alt.Chart(long_df)
         .mark_line(strokeWidth=2.5)
@@ -729,7 +730,7 @@ def make_altair_comparison_chart(frame: pd.DataFrame):
                 alt.Tooltip("ret:Q", title="수익률(%)", format=".2f"),
             ],
         )
-        .properties(title="시작일 기준 수익률 비교", height=520, width="container")
+        .properties(title="시작일 기준 수익률 비교", height=chart_height, width="container")
         .configure(aria=False)
         .interactive()
     )
@@ -801,7 +802,7 @@ def render_return_calculator(result):
     with st.sidebar:
         st.markdown(
             '<div class="notranslate" translate="no" lang="ko" '
-            'style="font-size:1.5rem; font-weight:700; margin: 0 0 0.75rem 0;">수익률 계산기</div>',
+            f'style="font-size:{mobile_sidebar_title_rem}; font-weight:700; margin: 0 0 0.75rem 0;">수익률 계산기</div>',
             unsafe_allow_html=True,
         )
         if not result:
@@ -896,12 +897,12 @@ def render_return_calculator(result):
             else format_price(profit_amount, currency)
         )
         st.markdown(
-            f"<p style='color:{color}; font-size:1rem; margin-top:0.25rem; margin-bottom:0.25rem;'>"
+            f"<p style='color:{color}; font-size:{mobile_result_rem}; margin-top:0.25rem; margin-bottom:0.25rem;'>"
             f"<strong>수익 금액:</strong> <strong>{profit_text}</strong></p>",
             unsafe_allow_html=True,
         )
         st.markdown(
-            f"<p style='color:{color}; font-size:1rem; margin: 0;'>"
+            f"<p style='color:{color}; font-size:{mobile_result_rem}; margin: 0;'>"
             f"<strong>수익률:</strong> <strong>{return_pct:+.2f}%</strong></p>",
             unsafe_allow_html=True,
         )
@@ -1012,6 +1013,8 @@ def make_price_chart(history, company_name: str, currency: str, show_ma20: bool,
 
 
 def make_altair_candlestick(history, company_name: str, show_ma20: bool, show_ma60: bool):
+    candle_height = int(380 * mobile_chart_scale)
+    volume_height = int(160 * mobile_chart_scale)
     frame = ohlc_frame(history).reset_index()
     date_col = frame.columns[0]
     frame = frame.rename(
@@ -1102,7 +1105,7 @@ def make_altair_candlestick(history, company_name: str, show_ma20: bool, show_ma
         )
     candle = alt.layer(*layers).properties(
         title=f"{company_name} 캔들스틱",
-        height=380,
+        height=candle_height,
         width="container",
     )
     volume = base.mark_bar(size=body_size).encode(
@@ -1111,7 +1114,7 @@ def make_altair_candlestick(history, company_name: str, show_ma20: bool, show_ma
         color=alt.Color("bar_color:N", scale=None, legend=None),
         opacity=opacity,
         tooltip=volume_tooltips,
-    ).properties(height=160, width="container")
+    ).properties(height=volume_height, width="container")
     return (
         alt.vconcat(candle, volume, spacing=8)
         .resolve_scale(x="shared")
@@ -1157,17 +1160,18 @@ def render_price_chart(
             st.info("종목을 2개 이상 조회하면 시작일 기준 수익률 비교 차트가 여기에 표시됩니다. 예: MSFT, AAPL")
 
     with tab_map["선 차트"]:
+        line_chart_height = int(520 * mobile_chart_scale)
         chart_data = pd.DataFrame({"종가": close_series(history)})
         frame = ohlc_frame(history)
         if show_ma20 and "MA20" in frame.columns:
             chart_data["MA20"] = frame["MA20"].to_numpy()
         if show_ma60 and "MA60" in frame.columns:
             chart_data["MA60"] = frame["MA60"].to_numpy()
-        st.line_chart(chart_data, x_label="날짜", y_label="가격", height=520, width="stretch")
+        st.line_chart(chart_data, x_label="날짜", y_label="가격", height=line_chart_height, width="stretch")
         st.plotly_chart(
             make_price_chart(history, company_name, currency, show_ma20, show_ma60),
             width="stretch",
-            height=520,
+            height=line_chart_height,
             theme=None,
             on_select="ignore",
             key="line_plotly_chart",
@@ -1228,6 +1232,9 @@ mobile_scale_map = {
 mobile_scale = mobile_scale_map.get(st.session_state.get("mobile_scale", "기본"), 1.0)
 mobile_title_rem = f"{2.45 * mobile_scale:.2f}rem"
 mobile_scale_rem = f"{mobile_scale:.2f}rem"
+mobile_sidebar_title_rem = f"{1.5 * mobile_scale:.2f}rem"
+mobile_result_rem = f"{mobile_scale:.2f}rem"
+mobile_chart_scale = max(1.0, mobile_scale)
 style_block = (
     """
     <style>
