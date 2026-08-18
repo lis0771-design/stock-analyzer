@@ -505,6 +505,12 @@ def fetch_current_quote(ticker: str, name: str, session) -> dict:
     }
 
 
+def format_watchlist_price(price: float, currency: str) -> str:
+    if currency == "KRW":
+        return f"{price:,.0f}"
+    return format_price(price, currency)
+
+
 def refresh_watchlist_quotes(session, fetched_items: list[dict], fetch_errors: list[str]) -> None:
     extra = {item["ticker"]: item for item in fetched_items}
     quotes = []
@@ -551,12 +557,12 @@ def render_watchlist_tab(quotes: list[dict] | None) -> None:
     table_rows = []
     for item in items:
         previous_close = (
-            format_price(item["previous_close"], item["currency"])
+            format_watchlist_price(item["previous_close"], item["currency"])
             if item.get("previous_close") is not None
             else "-"
         )
         current_price = (
-            format_price(item["current_price"], item["currency"])
+            format_watchlist_price(item["current_price"], item["currency"])
             if item.get("current_price") is not None
             else "-"
         )
@@ -1241,13 +1247,18 @@ components.html(
     """,
     height=0,
 )
+if st.session_state.get("mobile_scale") == "125%":
+    st.session_state.mobile_scale = "기본"
+elif st.session_state.get("mobile_scale") not in {None, "기본", "150%", "200%"}:
+    st.session_state.mobile_scale = "기본"
+
 if "mobile_scale" not in st.session_state:
     st.session_state.mobile_scale = "기본"
 
 mobile_scale_map = {
-    "기본": 1.0,
-    "110%": 1.1,
-    "125%": 1.25,
+    "기본": 1.25,
+    "150%": 1.5,
+    "200%": 2.0,
 }
 mobile_scale = mobile_scale_map.get(st.session_state.get("mobile_scale", "기본"), 1.0)
 mobile_title_rem = f"{2.45 * mobile_scale:.2f}rem"
