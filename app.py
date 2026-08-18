@@ -1280,19 +1280,21 @@ components.html(
       if (mobileWidth > 640) {
         title.style.removeProperty("font-size");
         title.style.removeProperty("letter-spacing");
+        title.style.removeProperty("line-height");
+        title.style.removeProperty("white-space");
         return;
       }
       const container = title.parentElement;
       if (!container) return;
-      title.style.whiteSpace = "nowrap";
-      title.style.lineHeight = "1.15";
-      title.style.letterSpacing = "-0.05em";
+      title.style.setProperty("white-space", "nowrap", "important");
+      title.style.setProperty("line-height", "1.15", "important");
+      title.style.setProperty("letter-spacing", "-0.05em", "important");
       let size = Math.min(96, Math.max(52, mobileWidth * 0.22));
-      title.style.fontSize = `${size}px`;
+      title.style.setProperty("font-size", `${size}px`, "important");
       const maxWidth = Math.max(container.clientWidth - 4, 0);
       while (title.scrollWidth > maxWidth && size > 32) {
         size -= 1;
-        title.style.fontSize = `${size}px`;
+        title.style.setProperty("font-size", `${size}px`, "important");
       }
     };
     doc.documentElement.setAttribute("lang", "ko");
