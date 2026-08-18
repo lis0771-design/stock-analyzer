@@ -1336,8 +1336,8 @@ style_block = (
     }
     .watchlist-mobile-table th.watchlist-name,
     .watchlist-mobile-table td.watchlist-name {
-        max-width: 4.8rem;
-        width: 4.8rem;
+        max-width: 6.2rem;
+        width: 6.2rem;
         overflow: hidden;
         text-overflow: ellipsis;
     }
