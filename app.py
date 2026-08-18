@@ -1217,9 +1217,19 @@ components.html(
     """,
     height=0,
 )
+if "mobile_scale" not in st.session_state:
+    st.session_state.mobile_scale = "기본"
+
+mobile_scale_map = {
+    "기본": 1.0,
+    "110%": 1.1,
+    "125%": 1.25,
+}
+mobile_scale = mobile_scale_map.get(st.session_state.get("mobile_scale", "기본"), 1.0)
+mobile_title_size = 2.45 * mobile_scale
 st.title("주식 데이터 분석기")
 st.markdown(
-    """
+    f"""
     <style>
     div[data-testid="stFormSubmitButton"] button,
     .stFormSubmitButton button {
@@ -1249,9 +1259,20 @@ st.markdown(
     }
     @media (max-width: 640px) {
         h1 {
-            font-size: 2.45rem !important;
+            font-size: {mobile_title_size:.2f}rem !important;
             line-height: 1.15 !important;
             white-space: nowrap !important;
+        }
+        div[data-testid="stAppViewContainer"] button,
+        div[data-testid="stAppViewContainer"] input,
+        div[data-testid="stAppViewContainer"] label,
+        div[data-testid="stAppViewContainer"] textarea,
+        div[data-testid="stAppViewContainer"] [data-baseweb="select"] * ,
+        div[data-testid="stAppViewContainer"] table,
+        div[data-testid="stAppViewContainer"] p,
+        div[data-testid="stAppViewContainer"] span,
+        div[data-testid="stAppViewContainer"] li {
+            font-size: {mobile_scale:.2f}rem !important;
         }
         div[data-testid="stHorizontalBlock"] {
             flex-wrap: nowrap !important;
@@ -1272,6 +1293,13 @@ st.markdown(
     'style="color: rgba(49, 51, 63, 0.6); font-size: 0.875rem; margin: 0 0 0.75rem 0;">'
     "종목 비교를 원하면 , 로 구분해서 입력하셔요.</p>",
     unsafe_allow_html=True,
+)
+st.radio(
+    "휴대폰 확대 보기",
+    options=list(mobile_scale_map.keys()),
+    key="mobile_scale",
+    horizontal=True,
+    help="휴대폰에서 글자, 버튼, 입력칸, 표를 더 크게 볼 수 있습니다.",
 )
 
 if "stock_query" not in st.session_state:
