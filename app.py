@@ -517,7 +517,7 @@ def render_watchlist_mobile_table(rows: list[dict]) -> None:
     for row in rows:
         body_rows.append(
             "<tr>"
-            f"<td>{html.escape(str(row['종목']))}</td>"
+            f"<td class='watchlist-name' title='{html.escape(str(row['종목']))}'>{html.escape(str(row['종목']))}</td>"
             f"<td>{html.escape(str(row['전일종가']))}</td>"
             f"<td class='watchlist-current-price'>{html.escape(str(row['현재가']))}</td>"
             f"<td>{html.escape(str(row['전일대비']))}</td>"
@@ -529,7 +529,7 @@ def render_watchlist_mobile_table(rows: list[dict]) -> None:
           <table class="watchlist-mobile-table">
             <thead>
               <tr>
-                <th>종목</th>
+                <th class="watchlist-name">종목</th>
                 <th>전일종가</th>
                 <th class="watchlist-current-price">현재가</th>
                 <th>전일대비</th>
@@ -1333,6 +1333,13 @@ style_block = (
         padding: 0.45rem 0.65rem;
         text-align: left;
         white-space: nowrap;
+    }
+    .watchlist-mobile-table th.watchlist-name,
+    .watchlist-mobile-table td.watchlist-name {
+        max-width: 4.8rem;
+        width: 4.8rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .watchlist-current-price {
         font-weight: 700 !important;
