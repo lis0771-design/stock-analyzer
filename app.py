@@ -1226,6 +1226,16 @@ st.markdown(
         background-color: #31333F !important;
         border-color: #31333F !important;
     }
+    @media (max-width: 640px) {
+        div[data-testid="stHorizontalBlock"] {
+            flex-wrap: nowrap !important;
+            gap: 0.5rem !important;
+        }
+        div[data-testid="stHorizontalBlock"] > div {
+            min-width: 0 !important;
+            flex: 1 1 0 !important;
+        }
+    }
     </style>
     """,
     unsafe_allow_html=True,
