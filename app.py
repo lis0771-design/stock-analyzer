@@ -1227,6 +1227,11 @@ st.markdown(
         border-color: #31333F !important;
     }
     @media (max-width: 640px) {
+        h1 {
+            font-size: 2.45rem !important;
+            line-height: 1.15 !important;
+            white-space: nowrap !important;
+        }
         div[data-testid="stHorizontalBlock"] {
             flex-wrap: nowrap !important;
             gap: 0.5rem !important;
