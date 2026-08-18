@@ -1180,6 +1180,24 @@ def render_price_chart(
         )
 
 
+def format_history_table(history: pd.DataFrame) -> pd.DataFrame:
+    table = history.drop(columns=["MA20", "MA60"], errors="ignore").reset_index()
+    date_col = table.columns[0]
+    if pd.api.types.is_datetime64_any_dtype(table[date_col]):
+        table[date_col] = table[date_col].dt.strftime("%Y/%m/%d")
+    for col in table.columns[1:]:
+        if not pd.api.types.is_numeric_dtype(table[col]):
+            continue
+        table[col] = table[col].map(
+            lambda value: (
+                f"{float(value):,.0f}"
+                if pd.notna(value) and float(value).is_integer()
+                else (f"{float(value):,.2f}" if pd.notna(value) else "")
+            )
+        )
+    return table
+
+
 st.set_page_config(page_title="주식 데이터 분석기", layout="wide")
 components.html(
     """
@@ -1342,6 +1360,6 @@ if result:
         comparisons,
         st.session_state.get("watchlist_quotes") or [],
     )
-    st.subheader("역사적 데이터")
-    history_table = result["history"].drop(columns=["MA20", "MA60"], errors="ignore")
+    st.subheader("이전 데이터")
+    history_table = format_history_table(result["history"])
     st.dataframe(history_table, width="stretch")
